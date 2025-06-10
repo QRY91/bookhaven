@@ -26,7 +26,7 @@ This solution consists of **4 projects** working together:
 1. **Clone and Open**
 
    ```bash
-   git clone [your-repo-url]
+   git clone https://github.com/QRY91/bookhaven
    cd bookhaven
    # Open BookHaven.sln in Visual Studio
    ```
