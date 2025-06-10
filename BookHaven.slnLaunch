@@ -1,0 +1,58 @@
+[
+  {
+    "Name": "All Services (Production-like)",
+    "Projects": [
+      {
+        "Path": "BookHaven.IdentityServer\\BookHaven.IdentityServer.csproj",
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "BookHaven.OrderApi\\BookHaven.OrderApi.csproj", 
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "BookHaven.MVC\\BookHaven.MVC.csproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "Development Mode (All Debug)",
+    "Projects": [
+      {
+        "Path": "BookHaven.IdentityServer\\BookHaven.IdentityServer.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "BookHaven.OrderApi\\BookHaven.OrderApi.csproj", 
+        "Action": "Start"
+      },
+      {
+        "Path": "BookHaven.MVC\\BookHaven.MVC.csproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "API Testing (API + Identity Only)",
+    "Projects": [
+      {
+        "Path": "BookHaven.IdentityServer\\BookHaven.IdentityServer.csproj",
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "BookHaven.OrderApi\\BookHaven.OrderApi.csproj", 
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "MVC Only (For UI Development)",
+    "Projects": [
+      {
+        "Path": "BookHaven.MVC\\BookHaven.MVC.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

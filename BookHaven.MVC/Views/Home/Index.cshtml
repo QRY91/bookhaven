@@ -1,0 +1,119 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="row bg-primary text-white py-5 mb-5">
+        <div class="col-12 text-center">
+            <div class="container">
+                <h1 class="display-4 fw-bold mb-3">📚 Welcome to BookHaven</h1>
+                <p class="lead mb-4">Your digital library management system - Discover, Manage, and Explore Books</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a asp-controller="Books" asp-action="Index" class="btn btn-light btn-lg me-md-2">
+                        <i class="bi bi-book-half"></i> Browse Books
+                    </a>
+                    <a asp-controller="Books" asp-action="Create" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-plus-circle"></i> Add New Book
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="mb-4">📖 Features</h2>
+                <p class="text-muted mb-5">Everything you need to manage your book collection</p>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <!-- Books Management -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="feature-icon bg-primary text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-book-half fs-4"></i>
+                        </div>
+                        <h5 class="card-title">Books Management</h5>
+                        <p class="card-text text-muted">Add, edit, and organize your book collection with detailed information including ISBN, pricing, and stock levels.</p>
+                        <a asp-controller="Books" asp-action="Index" class="btn btn-primary">
+                            <i class="bi bi-arrow-right"></i> Manage Books
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Authors -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="feature-icon bg-success text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-person fs-4"></i>
+                        </div>
+                        <h5 class="card-title">Author Profiles</h5>
+                        <p class="card-text text-muted">Maintain comprehensive author information including biographies, contact details, and their published works.</p>
+                        <a asp-controller="Authors" asp-action="Index" class="btn btn-success">
+                            <i class="bi bi-arrow-right"></i> View Authors
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="feature-icon bg-warning text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-tags fs-4"></i>
+                        </div>
+                        <h5 class="card-title">Categories</h5>
+                        <p class="card-text text-muted">Organize books by categories like Fiction, Science, History, and more for easy browsing and discovery.</p>
+                        <a asp-controller="Categories" asp-action="Index" class="btn btn-warning">
+                            <i class="bi bi-arrow-right"></i> Browse Categories
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Info -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-lg-8">
+                                <h5 class="card-title">🏗️ Multi-Project Architecture</h5>
+                                <p class="card-text mb-0">
+                                    This BookHaven application demonstrates a modern multi-project architecture with:
+                                    <strong>MVC Frontend</strong>, <strong>API Services</strong>, and <strong>Identity Server</strong> 
+                                    for a scalable, maintainable web application.
+                                </p>
+                            </div>
+                            <div class="col-lg-4 text-lg-end">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="small text-muted">MVC</div>
+                                        <div class="badge bg-primary">Port 7234</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="small text-muted">API</div>
+                                        <div class="badge bg-success">Port 7001</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="small text-muted">Identity</div>
+                                        <div class="badge bg-warning">Port 6001</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

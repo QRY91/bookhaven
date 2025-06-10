@@ -1,0 +1,84 @@
+@model IEnumerable<Author>
+
+@{
+    ViewData["Title"] = "Authors";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">👥 Authors</h2>
+            
+            <div class="mb-3">
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add New Author
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>@Html.DisplayNameFor(model => model.FullName)</th>
+                                    <th>@Html.DisplayNameFor(model => model.Email)</th>
+                                    <th>@Html.DisplayNameFor(model => model.BirthDate)</th>
+                                    <th>Books Published</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@Html.DisplayFor(modelItem => item.FullName)</strong>
+                                            @if (!string.IsNullOrEmpty(item.Biography))
+                                            {
+                                                <br />
+                                                <small class="text-muted">@item.Biography.Substring(0, Math.Min(100, item.Biography.Length))@(item.Biography.Length > 100 ? "..." : "")</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(item.Email))
+                                            {
+                                                <a href="mailto:@item.Email">@item.Email</a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.BirthDate.HasValue)
+                                            {
+                                                @item.BirthDate.Value.ToString("MMM dd, yyyy")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                @(item.Books?.Count ?? 0) books
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Details</a>
+                                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Edit</a>
+                                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
