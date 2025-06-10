@@ -1,0 +1,426 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using {ProjectName}.Models;
+using {ProjectName}.Repositories;
+using {ProjectName}.ViewModels;
+
+namespace {ProjectName}.Controllers
+{
+    // === OPTIONAL: Require authentication for entire controller ===
+    // [Authorize]
+    // [Authorize(Roles = "Admin")]
+    public class {Entity}Controller : Controller
+    {
+        private readonly I{Entity}Repository _{entity}Repository;
+        // === OPTIONAL: Additional repositories for related data ===
+        // private readonly I{RelatedEntity}Repository _{relatedEntity}Repository;
+        // private readonly ILogger<{Entity}Controller> _logger;
+
+        public {Entity}Controller(I{Entity}Repository {entity}Repository)
+        {
+            _{entity}Repository = {entity}Repository;
+            // _{relatedEntity}Repository = {relatedEntity}Repository;
+            // _logger = logger;
+        }
+
+        // === INDEX: List with filtering, search, and pagination ===
+        public async Task<IActionResult> Index(
+            string? searchString,
+            List<string>? selectedCategories,
+            decimal? minPrice,
+            decimal? maxPrice,
+            int page = 1,
+            int pageSize = 12)
+        {
+            try
+            {
+                // Get all items first
+                var all{Entities} = await _{entity}Repository.GetAllAsync();
+                var filtered{Entities} = all{Entities}.AsQueryable();
+
+                // === SEARCH FILTERING ===
+                if (!string.IsNullOrWhiteSpace(searchString))
+                {
+                    filtered{Entities} = filtered{Entities}
+                        .Where(e => e.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+                        // Add more search fields as needed:
+                        // || e.Description.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+                        // || (e.Category != null && e.Category.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                }
+
+                // === CATEGORY FILTERING (if applicable) ===
+                /*
+                if (selectedCategories != null && selectedCategories.Any())
+                {
+                    filtered{Entities} = filtered{Entities}
+                        .Where(e => e.Category != null && selectedCategories.Contains(e.Category.Name));
+                }
+                */
+
+                // === PRICE RANGE FILTERING (if applicable) ===
+                /*
+                if (minPrice.HasValue)
+                {
+                    filtered{Entities} = filtered{Entities}.Where(e => e.Price >= minPrice.Value);
+                }
+
+                if (maxPrice.HasValue)
+                {
+                    filtered{Entities} = filtered{Entities}.Where(e => e.Price <= maxPrice.Value);
+                }
+                */
+
+                // === PAGINATION ===
+                var totalItems = filtered{Entities}.Count();
+                var paged{Entities} = filtered{Entities}
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                // === VIEWBAG DATA FOR FILTERS ===
+                ViewBag.SearchString = searchString ?? string.Empty;
+                ViewBag.SelectedCategories = selectedCategories ?? new List<string>();
+                ViewBag.MinPrice = minPrice;
+                ViewBag.MaxPrice = maxPrice;
+                ViewBag.CurrentPage = page;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+                ViewBag.TotalItems = totalItems;
+
+                // === FILTER OPTIONS (populate dropdowns) ===
+                /*
+                ViewBag.Categories = all{Entities}
+                    .Where(e => e.Category != null)
+                    .Select(e => e.Category.Name)
+                    .Distinct()
+                    .ToList();
+                */
+
+                return View(paged{Entities});
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error retrieving {entities} list");
+                TempData["Error"] = "Error loading {entities}. Please try again.";
+                return View(new List<{Entity}>());
+            }
+        }
+
+        // === DETAILS: Show single item ===
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return BadRequest("ID is required");
+            }
+
+            try
+            {
+                var {entity} = await _{entity}Repository.GetByIdAsync(id.Value);
+                if ({entity} == null)
+                {
+                    return NotFound($"{Entity} with ID {id} not found");
+                }
+
+                return View({entity});
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error retrieving {entity} with ID {Id}", id);
+                TempData["Error"] = "Error loading {entity} details. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // === CREATE GET: Show creation form ===
+        // [Authorize] // Uncomment if creation requires authentication
+        public async Task<IActionResult> Create()
+        {
+            try
+            {
+                // === POPULATE DROPDOWNS FOR RELATED DATA ===
+                /*
+                var categories = await _categoryRepository.GetAllAsync();
+                ViewBag.Categories = new SelectList(categories, "Id", "Name");
+                */
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error loading create {entity} form");
+                TempData["Error"] = "Error loading form. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // === CREATE POST: Process creation ===
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        // [Authorize] // Uncomment if creation requires authentication
+        public async Task<IActionResult> Create({Entity} {entity})
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var result = await _{entity}Repository.AddAsync({entity});
+                    if (result)
+                    {
+                        TempData["Success"] = "{Entity} created successfully!";
+                        return RedirectToAction(nameof(Index));
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Failed to create {entity}. Please try again.");
+                    }
+                }
+
+                // === REPOPULATE DROPDOWNS ON VALIDATION FAILURE ===
+                /*
+                var categories = await _categoryRepository.GetAllAsync();
+                ViewBag.Categories = new SelectList(categories, "Id", "Name", {entity}.CategoryId);
+                */
+
+                return View({entity});
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error creating {entity}");
+                ModelState.AddModelError("", "An error occurred while creating the {entity}.");
+                return View({entity});
+            }
+        }
+
+        // === EDIT GET: Show edit form ===
+        // [Authorize] // Uncomment if editing requires authentication
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return BadRequest("ID is required");
+            }
+
+            try
+            {
+                var {entity} = await _{entity}Repository.GetByIdAsync(id.Value);
+                if ({entity} == null)
+                {
+                    return NotFound($"{Entity} with ID {id} not found");
+                }
+
+                // === POPULATE DROPDOWNS FOR RELATED DATA ===
+                /*
+                var categories = await _categoryRepository.GetAllAsync();
+                ViewBag.Categories = new SelectList(categories, "Id", "Name", {entity}.CategoryId);
+                */
+
+                return View({entity});
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error loading edit form for {entity} with ID {Id}", id);
+                TempData["Error"] = "Error loading {entity} for editing. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // === EDIT POST: Process edit ===
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        // [Authorize] // Uncomment if editing requires authentication
+        public async Task<IActionResult> Edit(int id, {Entity} {entity})
+        {
+            if (id != {entity}.Id)
+            {
+                return BadRequest("ID mismatch");
+            }
+
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var result = await _{entity}Repository.UpdateAsync({entity});
+                    if (result)
+                    {
+                        TempData["Success"] = "{Entity} updated successfully!";
+                        return RedirectToAction(nameof(Index));
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Failed to update {entity}. Please try again.");
+                    }
+                }
+
+                // === REPOPULATE DROPDOWNS ON VALIDATION FAILURE ===
+                /*
+                var categories = await _categoryRepository.GetAllAsync();
+                ViewBag.Categories = new SelectList(categories, "Id", "Name", {entity}.CategoryId);
+                */
+
+                return View({entity});
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error updating {entity} with ID {Id}", id);
+                ModelState.AddModelError("", "An error occurred while updating the {entity}.");
+                return View({entity});
+            }
+        }
+
+        // === DELETE GET: Show delete confirmation ===
+        // [Authorize] // Uncomment if deletion requires authentication
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return BadRequest("ID is required");
+            }
+
+            try
+            {
+                var {entity} = await _{entity}Repository.GetByIdAsync(id.Value);
+                if ({entity} == null)
+                {
+                    return NotFound($"{Entity} with ID {id} not found");
+                }
+
+                return View({entity});
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error loading delete confirmation for {entity} with ID {Id}", id);
+                TempData["Error"] = "Error loading {entity} for deletion. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // === DELETE POST: Process deletion ===
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        // [Authorize] // Uncomment if deletion requires authentication
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                var result = await _{entity}Repository.DeleteAsync(id);
+                if (result)
+                {
+                    TempData["Success"] = "{Entity} deleted successfully!";
+                }
+                else
+                {
+                    TempData["Error"] = "Failed to delete {entity}. Please try again.";
+                }
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error deleting {entity} with ID {Id}", id);
+                TempData["Error"] = "An error occurred while deleting the {entity}.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // === OPTIONAL: API ENDPOINT FOR AJAX CALLS ===
+        /*
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            try
+            {
+                var {entities} = await _{entity}Repository.GetAllAsync();
+                return Json({entities});
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error retrieving {entities} for API");
+                return Json(new { error = "Failed to load {entities}" });
+            }
+        }
+        */
+
+        // === OPTIONAL: SEARCH ENDPOINT FOR AUTOCOMPLETE ===
+        /*
+        [HttpGet]
+        public async Task<IActionResult> Search(string term)
+        {
+            try
+            {
+                var {entities} = await _{entity}Repository.SearchAsync(term);
+                var results = {entities}.Select(e => new { 
+                    id = e.Id, 
+                    text = e.Name 
+                }).ToList();
+                return Json(results);
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error searching {entities}");
+                return Json(new List<object>());
+            }
+        }
+        */
+    }
+}
+
+/* 
+=== QUICK EXAM SETUP CHECKLIST ===
+
+1. Replace {ProjectName} with your actual project name
+2. Replace {Entity} with your entity name (Product, Order, etc.)
+3. Replace {entity} with lowercase entity name (product, order, etc.)
+4. Replace {Entities} with plural form (Products, Orders, etc.)
+5. Replace {entities} with lowercase plural (products, orders, etc.)
+6. Uncomment authentication attributes if needed
+7. Uncomment filtering code for your specific entity properties
+8. Add related repository injections if needed
+
+=== COMMON ENTITY EXAMPLES ===
+
+Product: Name, Description, Price, CategoryId, Category
+Order: OrderDate, TotalAmount, CustomerId, Customer, OrderItems
+Customer: Name, Email, Phone, Address
+Category: Name, Description, Products
+Review: Rating, Comment, ProductId, CustomerId
+
+=== FILTERING EXAMPLES BY ENTITY TYPE ===
+
+Product: Price range, Category, Brand, InStock status
+Order: Date range, Status, Customer, Total amount range
+Customer: Name search, Email search, Registration date range
+Review: Rating range, Product, Customer
+
+=== AUTHENTICATION PATTERNS ===
+
+[AllowAnonymous] - Allow unauthenticated access
+[Authorize] - Require any authenticated user
+[Authorize(Roles = "Admin")] - Require specific role
+[Authorize(Policy = "PolicyName")] - Require custom policy
+
+=== VIEWBAG DATA PATTERNS ===
+
+ViewBag.Categories - For category dropdowns
+ViewBag.Statuses - For status dropdowns  
+ViewBag.Customers - For customer dropdowns
+ViewBag.CurrentSort - For sorting state
+ViewBag.NameSortParam - For sort parameters
+
+=== TEMPDATA MESSAGES ===
+
+TempData["Success"] - Success messages
+TempData["Error"] - Error messages
+TempData["Warning"] - Warning messages
+TempData["Info"] - Info messages
+
+=== EXAM TIP: COPY-PASTE WORKFLOW ===
+
+1. Copy this template
+2. Find/Replace all placeholder values
+3. Uncomment the filtering you need
+4. Add [Authorize] attributes where needed
+5. Test CRUD operations
+6. Add validation error handling
+*/

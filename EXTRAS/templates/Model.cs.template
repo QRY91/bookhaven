@@ -1,0 +1,436 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
+namespace {ProjectName}.Models
+{
+    // === BASIC ENTITY MODEL TEMPLATE ===
+    public class {Entity}
+    {
+        // === PRIMARY KEY ===
+        public int Id { get; set; }
+
+        // === REQUIRED FIELDS WITH VALIDATION ===
+        [Required(ErrorMessage = "Name is required")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 100 characters")]
+        [Display(Name = "Full Name")]
+        public string Name { get; set; } = string.Empty;
+
+        // === OPTIONAL STRING WITH VALIDATION ===
+        [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+        [Display(Name = "Description")]
+        public string? Description { get; set; }
+
+        // === EMAIL VALIDATION ===
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        [Display(Name = "Email Address")]
+        public string Email { get; set; } = string.Empty;
+
+        // === PHONE VALIDATION ===
+        [Phone(ErrorMessage = "Invalid phone number format")]
+        [Display(Name = "Phone Number")]
+        public string? PhoneNumber { get; set; }
+
+        // === CURRENCY/DECIMAL WITH PRECISION ===
+        [Required(ErrorMessage = "Price is required")]
+        [DataType(DataType.Currency)]
+        [Range(0.01, 999999.99, ErrorMessage = "Price must be between $0.01 and $999,999.99")]
+        [Display(Name = "Price")]
+        [Precision(10, 2)]
+        public decimal Price { get; set; }
+
+        // === INTEGER WITH RANGE ===
+        [Range(1, 1000, ErrorMessage = "Quantity must be between 1 and 1000")]
+        [Display(Name = "Quantity")]
+        public int Quantity { get; set; }
+
+        // === DATE VALIDATION ===
+        [DataType(DataType.Date)]
+        [Display(Name = "Created Date")]
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        [DataType(DataType.DateTime)]
+        [Display(Name = "Last Modified")]
+        public DateTime? LastModified { get; set; }
+
+        // === URL VALIDATION ===
+        [Url(ErrorMessage = "Invalid URL format")]
+        [Display(Name = "Website URL")]
+        public string? WebsiteUrl { get; set; }
+
+        // === COLOR HEX VALIDATION ===
+        [RegularExpression(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", 
+            ErrorMessage = "Color must be in hex format (#RRGGBB or #RGB)")]
+        [Display(Name = "Color Code")]
+        public string? Color { get; set; }
+
+        // === BOOLEAN FLAGS ===
+        [Display(Name = "Is Active")]
+        public bool IsActive { get; set; } = true;
+
+        [Display(Name = "Is Featured")]
+        public bool IsFeatured { get; set; } = false;
+
+        // === FOREIGN KEY RELATIONSHIPS ===
+        [Display(Name = "Category")]
+        public int? CategoryId { get; set; }
+
+        // === NAVIGATION PROPERTIES ===
+        [ForeignKey("CategoryId")]
+        public virtual Category? Category { get; set; }
+
+        // One-to-Many: This entity has many related items
+        public virtual ICollection<{RelatedEntity}>? {RelatedEntities} { get; set; }
+    }
+
+    // === CATEGORY/LOOKUP TABLE TEMPLATE ===
+    public class Category
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Category name is required")]
+        [StringLength(50, ErrorMessage = "Category name cannot exceed 50 characters")]
+        [Display(Name = "Category Name")]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(200, ErrorMessage = "Description cannot exceed 200 characters")]
+        public string? Description { get; set; }
+
+        [Display(Name = "Display Order")]
+        [Range(0, 999, ErrorMessage = "Display order must be between 0 and 999")]
+        public int DisplayOrder { get; set; } = 0;
+
+        [Display(Name = "Is Active")]
+        public bool IsActive { get; set; } = true;
+
+        // Navigation property - One Category has many Products
+        public virtual ICollection<{Entity}>? {Entities} { get; set; }
+    }
+
+    // === USER/CUSTOMER MODEL TEMPLATE ===
+    public class Customer
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "First name is required")]
+        [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters")]
+        [Display(Name = "First Name")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Last name is required")]
+        [StringLength(50, ErrorMessage = "Last name cannot exceed 50 characters")]
+        [Display(Name = "Last Name")]
+        public string LastName { get; set; } = string.Empty;
+
+        [NotMapped]
+        [Display(Name = "Full Name")]
+        public string FullName => $"{FirstName} {LastName}";
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters")]
+        public string Email { get; set; } = string.Empty;
+
+        [Phone(ErrorMessage = "Invalid phone number")]
+        [Display(Name = "Phone Number")]
+        public string? PhoneNumber { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "Date of Birth")]
+        public DateTime? DateOfBirth { get; set; }
+
+        [StringLength(200, ErrorMessage = "Address cannot exceed 200 characters")]
+        public string? Address { get; set; }
+
+        [StringLength(50, ErrorMessage = "City cannot exceed 50 characters")]
+        public string? City { get; set; }
+
+        [StringLength(20, ErrorMessage = "Postal code cannot exceed 20 characters")]
+        [Display(Name = "Postal Code")]
+        public string? PostalCode { get; set; }
+
+        [StringLength(50, ErrorMessage = "Country cannot exceed 50 characters")]
+        public string? Country { get; set; }
+
+        [Display(Name = "Registration Date")]
+        public DateTime RegistrationDate { get; set; } = DateTime.Now;
+
+        [Display(Name = "Is Active")]
+        public bool IsActive { get; set; } = true;
+
+        // Navigation properties
+        public virtual ICollection<Order>? Orders { get; set; }
+    }
+
+    // === ORDER/TRANSACTION MODEL TEMPLATE ===
+    public class Order
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [Display(Name = "Order Number")]
+        [StringLength(20)]
+        public string OrderNumber { get; set; } = string.Empty;
+
+        [Display(Name = "Order Date")]
+        [DataType(DataType.DateTime)]
+        public DateTime OrderDate { get; set; } = DateTime.Now;
+
+        [Required(ErrorMessage = "Customer is required")]
+        [Display(Name = "Customer")]
+        public int CustomerId { get; set; }
+
+        [Required(ErrorMessage = "Total amount is required")]
+        [DataType(DataType.Currency)]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Total amount must be greater than 0")]
+        [Display(Name = "Total Amount")]
+        [Precision(10, 2)]
+        public decimal TotalAmount { get; set; }
+
+        [StringLength(20)]
+        [Display(Name = "Status")]
+        public string Status { get; set; } = "Pending";
+
+        [StringLength(500)]
+        [Display(Name = "Notes")]
+        public string? Notes { get; set; }
+
+        [Display(Name = "Shipping Address")]
+        [StringLength(200)]
+        public string? ShippingAddress { get; set; }
+
+        [Display(Name = "Is Paid")]
+        public bool IsPaid { get; set; } = false;
+
+        [DataType(DataType.DateTime)]
+        [Display(Name = "Shipped Date")]
+        public DateTime? ShippedDate { get; set; }
+
+        // Navigation properties
+        [ForeignKey("CustomerId")]
+        public virtual Customer? Customer { get; set; }
+
+        public virtual ICollection<OrderItem>? OrderItems { get; set; }
+    }
+
+    // === JOIN/BRIDGE TABLE TEMPLATE (Many-to-Many) ===
+    public class OrderItem
+    {
+        public int Id { get; set; }
+
+        [Required]
+        public int OrderId { get; set; }
+
+        [Required]
+        public int ProductId { get; set; }
+
+        [Required(ErrorMessage = "Quantity is required")]
+        [Range(1, 999, ErrorMessage = "Quantity must be between 1 and 999")]
+        [Display(Name = "Quantity")]
+        public int Quantity { get; set; }
+
+        [Required(ErrorMessage = "Unit price is required")]
+        [DataType(DataType.Currency)]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Unit price must be greater than 0")]
+        [Display(Name = "Unit Price")]
+        [Precision(10, 2)]
+        public decimal UnitPrice { get; set; }
+
+        [NotMapped]
+        [Display(Name = "Line Total")]
+        public decimal LineTotal => Quantity * UnitPrice;
+
+        // Navigation properties
+        [ForeignKey("OrderId")]
+        public virtual Order? Order { get; set; }
+
+        [ForeignKey("ProductId")]
+        public virtual {Entity}? Product { get; set; }
+    }
+
+    // === AUDIT/TIMESTAMP BASE MODEL ===
+    public abstract class AuditableEntity
+    {
+        [Display(Name = "Created Date")]
+        [DataType(DataType.DateTime)]
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        [Display(Name = "Created By")]
+        [StringLength(50)]
+        public string? CreatedBy { get; set; }
+
+        [Display(Name = "Last Modified")]
+        [DataType(DataType.DateTime)]
+        public DateTime? LastModified { get; set; }
+
+        [Display(Name = "Modified By")]
+        [StringLength(50)]
+        public string? ModifiedBy { get; set; }
+
+        [Display(Name = "Is Deleted")]
+        public bool IsDeleted { get; set; } = false;
+
+        [Display(Name = "Deleted Date")]
+        [DataType(DataType.DateTime)]
+        public DateTime? DeletedDate { get; set; }
+
+        [Display(Name = "Deleted By")]
+        [StringLength(50)]
+        public string? DeletedBy { get; set; }
+    }
+
+    // === PRODUCT EXAMPLE (Inheriting from Auditable) ===
+    public class Product : AuditableEntity
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Product name is required")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Product name must be between 2 and 100 characters")]
+        [Display(Name = "Product Name")]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+        [Display(Name = "Product Description")]
+        [DataType(DataType.MultilineText)]
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Price is required")]
+        [DataType(DataType.Currency)]
+        [Range(0.01, 99999.99, ErrorMessage = "Price must be between $0.01 and $99,999.99")]
+        [Display(Name = "Price")]
+        [Precision(10, 2)]
+        public decimal Price { get; set; }
+
+        [Required(ErrorMessage = "Category is required")]
+        [Display(Name = "Category")]
+        public int CategoryId { get; set; }
+
+        [Display(Name = "Stock Quantity")]
+        [Range(0, 9999, ErrorMessage = "Stock quantity must be between 0 and 9999")]
+        public int StockQuantity { get; set; } = 0;
+
+        [StringLength(50, ErrorMessage = "SKU cannot exceed 50 characters")]
+        [Display(Name = "SKU")]
+        public string? SKU { get; set; }
+
+        [Display(Name = "Is Active")]
+        public bool IsActive { get; set; } = true;
+
+        [Display(Name = "Is Featured")]
+        public bool IsFeatured { get; set; } = false;
+
+        [Display(Name = "Weight (kg)")]
+        [Range(0, 1000, ErrorMessage = "Weight must be between 0 and 1000 kg")]
+        public decimal? Weight { get; set; }
+
+        [Url(ErrorMessage = "Invalid image URL format")]
+        [Display(Name = "Image URL")]
+        public string? ImageUrl { get; set; }
+
+        // Navigation properties
+        [ForeignKey("CategoryId")]
+        public virtual Category? Category { get; set; }
+
+        public virtual ICollection<OrderItem>? OrderItems { get; set; }
+        public virtual ICollection<Review>? Reviews { get; set; }
+    }
+
+    // === REVIEW/RATING MODEL ===
+    public class Review
+    {
+        public int Id { get; set; }
+
+        [Required]
+        public int ProductId { get; set; }
+
+        [Required]
+        public int CustomerId { get; set; }
+
+        [Required(ErrorMessage = "Rating is required")]
+        [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5")]
+        [Display(Name = "Rating")]
+        public int Rating { get; set; }
+
+        [StringLength(1000, ErrorMessage = "Comment cannot exceed 1000 characters")]
+        [Display(Name = "Comment")]
+        [DataType(DataType.MultilineText)]
+        public string? Comment { get; set; }
+
+        [Display(Name = "Review Date")]
+        [DataType(DataType.DateTime)]
+        public DateTime ReviewDate { get; set; } = DateTime.Now;
+
+        [Display(Name = "Is Approved")]
+        public bool IsApproved { get; set; } = false;
+
+        // Navigation properties
+        [ForeignKey("ProductId")]
+        public virtual Product? Product { get; set; }
+
+        [ForeignKey("CustomerId")]
+        public virtual Customer? Customer { get; set; }
+    }
+}
+
+/* 
+=== QUICK EXAM SETUP CHECKLIST ===
+
+1. Replace {ProjectName} with your actual project name
+2. Replace {Entity} with your main entity name
+3. Replace {RelatedEntity} and {RelatedEntities} with actual related entity names
+4. Choose relevant properties for your specific domain
+5. Add/remove validation attributes as needed
+6. Consider inheritance from AuditableEntity for audit trails
+
+=== COMMON VALIDATION ATTRIBUTES ===
+
+[Required] - Field is mandatory
+[StringLength(max, MinimumLength = min)] - String length constraints
+[Range(min, max)] - Numeric range validation
+[EmailAddress] - Email format validation
+[Phone] - Phone number format validation
+[Url] - URL format validation
+[DataType(DataType.X)] - Data type specification
+[Display(Name = "X")] - Display name for UI
+[RegularExpression("pattern")] - Custom regex validation
+[Compare("PropertyName")] - Compare with another property
+[CreditCard] - Credit card number validation
+
+=== COMMON DATA TYPES ===
+
+DataType.Currency - For money fields
+DataType.Date - Date only
+DataType.DateTime - Date and time
+DataType.EmailAddress - Email fields
+DataType.MultilineText - Textarea
+DataType.Password - Password fields
+DataType.PhoneNumber - Phone numbers
+DataType.Time - Time only
+DataType.Url - URLs
+
+=== RELATIONSHIP PATTERNS ===
+
+One-to-Many: Category -> Products
+Many-to-Many: Products <-> Tags (through ProductTags)
+One-to-One: User -> Profile
+Self-Referencing: Category -> ParentCategory
+
+=== ENTITY FRAMEWORK ATTRIBUTES ===
+
+[Key] - Primary key (if not named Id)
+[ForeignKey("PropertyName")] - Foreign key specification
+[NotMapped] - Exclude from database
+[Table("TableName")] - Custom table name
+[Column("ColumnName")] - Custom column name
+[Index] - Database index
+[Precision(precision, scale)] - Decimal precision
+
+=== EXAM DOMAIN EXAMPLES ===
+
+E-Commerce: Product, Category, Order, OrderItem, Customer, Review, Cart
+Blog: Post, Comment, Tag, Author, Category
+Library: Book, Author, Genre, Member, Loan, Reservation
+School: Student, Course, Enrollment, Teacher, Assignment, Grade
+Inventory: Item, Supplier, Purchase, Sale, Location, StockMovement
+*/

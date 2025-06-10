@@ -1,0 +1,116 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using {ProjectName}.Models;
+
+namespace {ProjectName}.Data;
+
+// === OPTION 1: Primary Constructor (C# 12 / .NET 8) ===
+public class {ProjectName}DbContext(DbContextOptions<{ProjectName}DbContext> options) : IdentityDbContext<{CustomUser}>(options)
+{
+    // === CORE ENTITIES (Replace with your exam entities) ===
+    public DbSet<{MainEntity}> {MainEntities} { get; set; }
+    public DbSet<{SecondaryEntity}> {SecondaryEntities} { get; set; }
+    public DbSet<{RelatedEntity}> {RelatedEntities} { get; set; }
+    
+    // === COMMON E-COMMERCE ENTITIES (Use as examples) ===
+    // public DbSet<Product> Products { get; set; }
+    // public DbSet<Category> Categories { get; set; }
+    // public DbSet<Order> Orders { get; set; }
+    // public DbSet<OrderItem> OrderItems { get; set; }
+    // public DbSet<Customer> Customers { get; set; }
+    // public DbSet<Review> Reviews { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        
+        // === RELATIONSHIPS CONFIGURATION ===
+        
+        // One-to-Many: Category -> Products
+        // modelBuilder.Entity<Product>()
+        //     .HasOne(p => p.Category)
+        //     .WithMany(c => c.Products)
+        //     .HasForeignKey(p => p.CategoryId);
+        
+        // Many-to-Many: Orders -> Products (through OrderItems)
+        // modelBuilder.Entity<OrderItem>()
+        //     .HasKey(oi => new { oi.OrderId, oi.ProductId });
+        
+        // modelBuilder.Entity<OrderItem>()
+        //     .HasOne(oi => oi.Order)
+        //     .WithMany(o => o.OrderItems)
+        //     .HasForeignKey(oi => oi.OrderId);
+        
+        // modelBuilder.Entity<OrderItem>()
+        //     .HasOne(oi => oi.Product)
+        //     .WithMany()
+        //     .HasForeignKey(oi => oi.ProductId);
+        
+        // === PROPERTY CONFIGURATIONS ===
+        
+        // Decimal precision for prices
+        // modelBuilder.Entity<Product>()
+        //     .Property(p => p.Price)
+        //     .HasPrecision(10, 2);
+        
+        // Required fields
+        // modelBuilder.Entity<Product>()
+        //     .Property(p => p.Name)
+        //     .IsRequired()
+        //     .HasMaxLength(100);
+        
+        // === SEED DATA (Optional for exam) ===
+        
+        // modelBuilder.Entity<Category>().HasData(
+        //     new Category { Id = 1, Name = "Electronics" },
+        //     new Category { Id = 2, Name = "Books" },
+        //     new Category { Id = 3, Name = "Clothing" }
+        // );
+    }
+}
+
+/* 
+=== OPTION 2: Traditional Constructor (If C# 12 not available) ===
+
+public class {ProjectName}DbContext : IdentityDbContext<{CustomUser}>
+{
+    public {ProjectName}DbContext(DbContextOptions<{ProjectName}DbContext> options) : base(options)
+    {
+    }
+    
+    // DbSets go here...
+}
+
+=== QUICK EXAM SETUP STEPS ===
+
+1. Replace {ProjectName} with your actual project name
+2. Replace {CustomUser} with your user model (or use IdentityUser if no custom user)
+3. Replace {MainEntity}, {SecondaryEntity}, etc. with your actual entities
+4. Uncomment and configure relationships as needed
+5. Add any specific property configurations
+6. Run: Add-Migration InitialCreate
+7. Run: Update-Database
+
+=== COMMON EXAM ENTITIES ===
+
+E-Commerce: Product, Category, Order, OrderItem, Customer, Review, Cart, CartItem
+Blog: Post, Comment, Tag, Author, Category
+Library: Book, Author, Genre, Loan, Member, Reservation
+School: Student, Course, Enrollment, Teacher, Assignment, Grade
+Inventory: Item, Supplier, Purchase, Sale, Category, Location
+
+=== RELATIONSHIP PATTERNS ===
+
+One-to-Many: Category -> Products, Author -> Books, Customer -> Orders
+Many-to-Many: Students <-> Courses, Books <-> Authors, Products <-> Tags
+One-to-One: User -> Profile, Order -> Invoice
+
+=== COMMON DATA ANNOTATIONS (Alternative to Fluent API) ===
+
+[Required]
+[MaxLength(100)]
+[Range(0, 1000)]
+[DataType(DataType.Currency)]
+[Display(Name = "Display Name")]
+[ForeignKey("CategoryId")]
+*/

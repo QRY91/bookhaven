@@ -1,0 +1,112 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using {ProjectName}.Data;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// === DATABASE & IDENTITY CONFIGURATION ===
+builder.Services.AddDbContext<{ProjectName}DbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// === IDENTITY SETUP (Choose one option) ===
+// Option 1: Simple Identity with IdentityUser (recommended for exams)
+builder.Services.AddDefaultIdentity<IdentityUser>(options => 
+{
+    options.SignIn.RequireConfirmedAccount = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireDigit = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+})
+.AddEntityFrameworkStores<{ProjectName}DbContext>();
+
+// Option 2: Full Identity with Roles (uncomment if you need roles)
+/*
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireDigit = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+})
+.AddEntityFrameworkStores<{ProjectName}DbContext>()
+.AddDefaultTokenProviders()
+.AddDefaultUI();
+*/
+
+// === CORE MVC SERVICES ===
+builder.Services.AddControllersWithViews();
+
+// === REPOSITORIES (Add only if you're using Repository pattern) ===
+// builder.Services.AddScoped<I{Entity}Repository, {Entity}Repository>();
+
+var app = builder.Build();
+
+// === MIDDLEWARE PIPELINE ===
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+// IMPORTANT: Authentication before Authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+// === ROUTING CONFIGURATION ===
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// === IDENTITY ROUTES (for registration/login pages) ===
+app.MapRazorPages();
+
+app.Run();
+
+/* 
+=== EXAM-READY QUICK SETUP ===
+
+1. Replace {ProjectName} with your actual project name
+2. Ensure you have these NuGet packages:
+   - Microsoft.AspNetCore.Identity.EntityFrameworkCore
+   - Microsoft.EntityFrameworkCore.SqlServer
+   - Microsoft.EntityFrameworkCore.Tools
+   - Microsoft.AspNetCore.Identity.UI
+
+3. Add connection string to appsettings.json:
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database={ProjectName}Db;Trusted_Connection=true;MultipleActiveResultSets=true"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+
+4. Create your DbContext
+5. Run: dotnet ef migrations add InitialCreate
+6. Run: dotnet ef database update
+
+=== TESTING THE SETUP ===
+- Navigate to /Identity/Account/Register to create an account
+- Navigate to /Identity/Account/Login to sign in
+- Use [Authorize] attribute on controllers to protect them
+
+=== IF YOU GET BUILD ERRORS ===
+- Make sure all using statements reference existing namespaces
+- Verify all NuGet packages are installed
+- Check that DbContext class exists and is properly named
+- Ensure appsettings.json has the connection string
+*/

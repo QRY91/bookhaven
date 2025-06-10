@@ -1,0 +1,250 @@
+using Microsoft.EntityFrameworkCore;
+using {ProjectName}.Data;
+using {ProjectName}.Models;
+
+namespace {ProjectName}.Repositories
+{
+    // === INTERFACE DEFINITION ===
+    public interface I{Entity}Repository
+    {
+        Task<IEnumerable<{Entity}>> GetAllAsync();
+        Task<{Entity}?> GetByIdAsync(int id);
+        Task<{Entity}?> GetByNameAsync(string name); // Optional: if entity has Name property
+        Task<bool> AddAsync({Entity} entity);
+        Task<bool> UpdateAsync({Entity} entity);
+        Task<bool> DeleteAsync(int id);
+        Task<bool> DeleteAsync({Entity} entity);
+        Task<bool> ExistsAsync(int id);
+        
+        // === OPTIONAL: COMMON QUERY METHODS ===
+        // Task<IEnumerable<{Entity}>> GetByPageAsync(int page, int pageSize);
+        // Task<IEnumerable<{Entity}>> SearchAsync(string searchTerm);
+        // Task<IEnumerable<{Entity}>> GetByCategoryAsync(int categoryId);
+        // Task<int> GetCountAsync();
+    }
+
+    // === IMPLEMENTATION ===
+    public class {Entity}Repository : I{Entity}Repository
+    {
+        private readonly {ProjectName}DbContext _context;
+        
+        // === OPTIONAL: Additional services (uncomment if needed) ===
+        // private readonly ILogger<{Entity}Repository> _logger;
+        // private readonly I{RelatedService} _{relatedService};
+
+        public {Entity}Repository({ProjectName}DbContext context)
+        {
+            _context = context;
+            // _logger = logger;
+            // _{relatedService} = {relatedService};
+        }
+
+        // === READ OPERATIONS ===
+        
+        public async Task<IEnumerable<{Entity}>> GetAllAsync()
+        {
+            return await _context.{Entities}
+                // .Include(e => e.{RelatedEntity})  // Uncomment for related data
+                // .Where(e => e.IsActive)          // Uncomment for filtering
+                // .OrderBy(e => e.Name)            // Uncomment for ordering
+                .ToListAsync();
+        }
+
+        public async Task<{Entity}?> GetByIdAsync(int id)
+        {
+            return await _context.{Entities}
+                // .Include(e => e.{RelatedEntity})  // Uncomment for related data
+                .FirstOrDefaultAsync(e => e.Id == id);
+        }
+
+        public async Task<{Entity}?> GetByNameAsync(string name)
+        {
+            return await _context.{Entities}
+                // .Include(e => e.{RelatedEntity})  // Uncomment for related data
+                .FirstOrDefaultAsync(e => e.Name == name);
+        }
+
+        public async Task<bool> ExistsAsync(int id)
+        {
+            return await _context.{Entities}.AnyAsync(e => e.Id == id);
+        }
+
+        // === CREATE OPERATION ===
+        
+        public async Task<bool> AddAsync({Entity} entity)
+        {
+            try
+            {
+                // === OPTION 1: Simple Add ===
+                _context.{Entities}.Add(entity);
+                var result = await _context.SaveChangesAsync();
+                return result > 0;
+                
+                // === OPTION 2: Transaction-based Add (for complex operations) ===
+                /*
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    _context.{Entities}.Add(entity);
+                    await _context.SaveChangesAsync();
+                    
+                    // Additional operations (e.g., external API calls)
+                    // var apiResult = await _externalService.CreateAsync(entity.Id);
+                    // if (!apiResult.Success)
+                    // {
+                    //     await transaction.RollbackAsync();
+                    //     return false;
+                    // }
+                    
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+                */
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error adding {Entity}");
+                return false;
+            }
+        }
+
+        // === UPDATE OPERATION ===
+        
+        public async Task<bool> UpdateAsync({Entity} entity)
+        {
+            try
+            {
+                _context.{Entities}.Update(entity);
+                var result = await _context.SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error updating {Entity} with ID {Id}", entity.Id);
+                return false;
+            }
+        }
+
+        // === DELETE OPERATIONS ===
+        
+        public async Task<bool> DeleteAsync(int id)
+        {
+            try
+            {
+                var entity = await GetByIdAsync(id);
+                if (entity == null) return false;
+                
+                return await DeleteAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error deleting {Entity} with ID {Id}", id);
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteAsync({Entity} entity)
+        {
+            try
+            {
+                _context.{Entities}.Remove(entity);
+                var result = await _context.SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                // _logger?.LogError(ex, "Error deleting {Entity}");
+                return false;
+            }
+        }
+
+        // === OPTIONAL: ADVANCED QUERY METHODS ===
+        
+        /*
+        public async Task<IEnumerable<{Entity}>> GetByPageAsync(int page, int pageSize)
+        {
+            return await _context.{Entities}
+                .Include(e => e.{RelatedEntity})
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<{Entity}>> SearchAsync(string searchTerm)
+        {
+            return await _context.{Entities}
+                .Include(e => e.{RelatedEntity})
+                .Where(e => e.Name.Contains(searchTerm) || 
+                           e.Description.Contains(searchTerm))
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<{Entity}>> GetByCategoryAsync(int categoryId)
+        {
+            return await _context.{Entities}
+                .Include(e => e.Category)
+                .Where(e => e.CategoryId == categoryId)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetCountAsync()
+        {
+            return await _context.{Entities}.CountAsync();
+        }
+        */
+    }
+}
+
+/* 
+=== QUICK EXAM SETUP CHECKLIST ===
+
+1. Replace {ProjectName} with your actual project name
+2. Replace {Entity} with your entity name (Product, Order, etc.)
+3. Replace {Entities} with the plural form (Products, Orders, etc.)
+4. Uncomment Include statements for related data
+5. Add the repository to Program.cs DI container:
+   builder.Services.AddScoped<I{Entity}Repository, {Entity}Repository>();
+
+=== COMMON ENTITY EXAMPLES ===
+
+Product: Products, Category relationship
+Order: Orders, OrderItems, Customer relationships  
+Customer: Customers, Orders relationship
+Category: Categories, Products relationship
+Review: Reviews, Product, Customer relationships
+
+=== INCLUDE EXAMPLES FOR RELATIONSHIPS ===
+
+.Include(p => p.Category)                    // One-to-Many
+.Include(o => o.OrderItems)                  // One-to-Many
+.Include(o => o.OrderItems).ThenInclude(oi => oi.Product)  // Nested Include
+.Include(p => p.Reviews).ThenInclude(r => r.Customer)      // Nested Include
+
+=== FILTERING EXAMPLES ===
+
+.Where(p => p.Price >= minPrice && p.Price <= maxPrice)
+.Where(p => p.Category.Name == categoryName)
+.Where(p => p.Name.Contains(searchTerm))
+.Where(p => p.IsActive && !p.IsDeleted)
+
+=== ORDERING EXAMPLES ===
+
+.OrderBy(p => p.Name)
+.OrderByDescending(p => p.CreatedDate)
+.OrderBy(p => p.Category.Name).ThenBy(p => p.Price)
+
+=== EXAM TIP: COPY-PASTE WORKFLOW ===
+
+1. Copy this template
+2. Find/Replace {Entity} with your entity name
+3. Find/Replace {Entities} with plural form
+4. Find/Replace {ProjectName} with your project
+5. Uncomment the Include/Where/OrderBy lines you need
+6. Register in Program.cs
+7. Inject into your controller constructor
+*/
