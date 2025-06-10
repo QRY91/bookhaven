@@ -372,3 +372,178 @@ dotnet new mvc -n ProjectName
 **Remember: You've built this before. The exam is just executing proven patterns under time pressure. Trust your templates, trust your timeline, trust yourself.**
 
 **🚀 YOU GOT THIS! 🚀**
+
+# ⚡ EXAM QUICK REFERENCE
+
+## 🔥 **30-Second Pattern Checks**
+
+### **Entity Framework Relationships**
+
+```csharp
+// Foreign Key + Navigation Property
+public int AuthorId { get; set; }
+public Author? Author { get; set; }
+
+// In DbContext
+public DbSet<Book> Books { get; set; }
+
+// Include for related data
+.Include(b => b.Author).Include(b => b.Category)
+```
+
+### **Controller CRUD Pattern**
+
+```csharp
+// GET: Display list
+public async Task<IActionResult> Index()
+{
+    return View(await _context.Books.Include(b => b.Author).ToListAsync());
+}
+
+// GET: Show create form
+public IActionResult Create()
+{
+    ViewBag.AuthorId = new SelectList(_context.Authors, "Id", "FullName");
+    return View();
+}
+
+// POST: Process creation
+[HttpPost]
+public async Task<IActionResult> Create(Book book)
+{
+    if (ModelState.IsValid) {
+        _context.Add(book);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index)); // PRG pattern!
+    }
+    ViewBag.AuthorId = new SelectList(_context.Authors, "Id", "FullName", book.AuthorId);
+    return View(book);
+}
+```
+
+### **View Form Pattern**
+
+```html
+<form asp-action="Create">
+  <select asp-for="AuthorId" asp-items="ViewBag.AuthorId" class="form-control">
+    <option value="">-- Select Author --</option>
+  </select>
+  <span asp-validation-for="AuthorId" class="text-danger"></span>
+</form>
+
+@section Scripts { @{await
+Html.RenderPartialAsync("_ValidationScriptsPartial");} }
+```
+
+### **Authorization Patterns**
+
+```csharp
+// Controller level
+[Authorize(Roles = "Admin")]
+public class AdminController : Controller
+
+// Action level
+[Authorize]
+public IActionResult Create()
+
+// In View
+@if (User.IsInRole("Admin"))
+{
+    <a asp-action="Delete">Delete</a>
+}
+```
+
+### **API Integration**
+
+```csharp
+// Service registration
+builder.Services.AddHttpClient<IStockService, StockService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7001/");
+});
+
+// API call
+var response = await _httpClient.GetAsync($"api/stock/check/{bookId}");
+if (response.IsSuccessStatusCode)
+{
+    var json = await response.Content.ReadAsStringAsync();
+    return JsonSerializer.Deserialize<StockInfo>(json);
+}
+```
+
+### **Blazor Component Pattern**
+
+```razor
+@page "/Admin/Books"
+@inject ApplicationDbContext Context
+
+<EditForm Model="book" OnValidSubmit="SaveBook">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <InputText @bind-Value="book.Title" />
+    <ValidationMessage For="() => book.Title" />
+</EditForm>
+
+@code {
+    private Book book = new();
+
+    private async Task SaveBook()
+    {
+        Context.Books.Add(book);
+        await Context.SaveChangesAsync();
+    }
+}
+```
+
+---
+
+## 🎯 **Common Exam Scenarios**
+
+### **"Add a new entity with relationships"**
+
+1. Create model with FK properties and navigation properties
+2. Add DbSet to ApplicationDbContext
+3. Create controller with Include() for related data
+4. Build views with SelectList for dropdowns
+5. Add validation and authorization as needed
+
+### **"Transform existing app"**
+
+1. Models: Change property names, add new properties
+2. Controllers: Update Include statements and ViewBag data
+3. Views: Update form fields and display text
+4. Navigation: Update menu items
+
+### **"Add API integration"**
+
+1. Create API controller with [ApiController] and [Route]
+2. Add HttpClient service registration
+3. Create service interface and implementation
+4. Use in controllers or Blazor components
+
+### **"Add admin functionality"**
+
+1. Use [Authorize(Roles = "Admin")] on controllers/actions
+2. Add role checks in views: @if (User.IsInRole("Admin"))
+3. Ensure admin role exists in seed data
+
+---
+
+## ⚠️ **Common Exam Mistakes**
+
+- **Forgetting Include()** → Navigation properties are null
+- **Missing ViewBag reset** → Dropdowns break on validation errors
+- **No PRG pattern** → Duplicate submissions on refresh
+- **Missing validation scripts** → Client-side validation broken
+- **Wrong foreign key names** → EF can't create relationships
+- **Forgetting await** → Methods don't complete properly
+
+---
+
+## 🚀 **Speed Tips**
+
+- **Copy-paste controller patterns** and modify names
+- **Use scaffolding** then customize: `dotnet aspnet-codegenerator`
+- **Check existing working code** before writing from scratch
+- **Test one piece at a time** instead of building everything first
+- **Use ViewBag.Title** to verify which page you're on

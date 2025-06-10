@@ -9,8 +9,8 @@ public class StockController : ControllerBase
     [HttpGet("check/{bookId}")]
     public ActionResult<object> CheckStock(int bookId)
     {
-        // Simple demo logic - in real app this would check actual inventory
-        var random = new Random();
+        // Consistent stock per book (seeded by book ID)
+        var random = new Random(bookId * 42);
         var stockLevel = random.Next(0, 50);
         var isInStock = stockLevel > 0;
         
