@@ -232,17 +232,304 @@ try {
         Remove-Item -Path $migrationsPath -Recurse -Force
     }
     
+    # Step 8: Generate basic working SeedData
+    Write-Host "📊 Generating basic working seed data..." -ForegroundColor Cyan
+    
+    $seedDataPath = "$TargetPath\$projectName.MVC\Data\SeedData.cs"
+    if (Test-Path $seedDataPath) {
+        $seedTemplate = @"
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using $projectName.Shared.Models;
+
+namespace $projectName.MVC.Data;
+
+public static class SeedData
+{
+    public static async Task Initialize(IServiceProvider serviceProvider)
+    {
+        using var context = new ApplicationDbContext(
+            serviceProvider.GetRequiredService<DbContextOptions<ApplicationDbContext>>());
+
+        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+        // Seed Roles
+        if (!await roleManager.RoleExistsAsync("Admin"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Admin"));
+        }
+        if (!await roleManager.RoleExistsAsync("User"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("User"));
+        }
+
+        // Seed Admin User
+        const string adminEmail = "admin@$($projectName.ToLower()).com";
+        const string adminPassword = "Admin123!";
+
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser == null)
+        {
+            adminUser = new ApplicationUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true
+            };
+            await userManager.CreateAsync(adminUser, adminPassword);
+            await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+
+        // Seed Categories
+        if (!context.Categories.Any())
+        {
+            var categories = new[]
+            {
+                new Category { Name = "Type A", Description = "First category type" },
+                new Category { Name = "Type B", Description = "Second category type" },
+                new Category { Name = "Type C", Description = "Third category type" }
+            };
+            context.Categories.AddRange(categories);
+            await context.SaveChangesAsync();
+        }
+
+        // Seed $($entity1New)s
+        if (!context.$($entity1New)s.Any())
+        {
+            var providers = new[]
+            {
+                new $entity1New { Name = "Provider One", Email = "provider1@example.com" },
+                new $entity1New { Name = "Provider Two", Email = "provider2@example.com" }
+            };
+            context.$($entity1New)s.AddRange(providers);
+            await context.SaveChangesAsync();
+        }
+
+        // Seed $($entity2New)s
+        if (!context.$($entity2New)s.Any())
+        {
+            var category1 = context.Categories.First();
+            var category2 = context.Categories.Skip(1).First();
+            var provider1 = context.$($entity1New)s.First();
+            var provider2 = context.$($entity1New)s.Skip(1).First();
+
+            var items = new[]
+            {
+                new $entity2New { Title = "Item One", Description = "First item", Price = 10.99m, $($entity1New)Id = provider1.Id, CategoryId = category1.Id },
+                new $entity2New { Title = "Item Two", Description = "Second item", Price = 15.99m, $($entity1New)Id = provider1.Id, CategoryId = category2.Id },
+                new $entity2New { Title = "Item Three", Description = "Third item", Price = 20.99m, $($entity1New)Id = provider2.Id, CategoryId = category1.Id }
+            };
+            context.$($entity2New)s.AddRange(items);
+            await context.SaveChangesAsync();
+        }
+    }
+}
+"@
+        Set-Content -Path $seedDataPath -Value $seedTemplate -Encoding UTF8
+    }
+    
+    # Step 9: Configure multi-project startup profiles
+    Write-Host "🚀 Configuring multi-project startup profiles..." -ForegroundColor Cyan
+    
+    # Create Properties folder for Visual Studio launch profiles
+    $propertiesPath = "$TargetPath\Properties"
+    if (!(Test-Path $propertiesPath)) {
+        New-Item -Path $propertiesPath -ItemType Directory -Force | Out-Null
+    }
+    
+    # Create launchSettings.json for the solution
+    $launchSettingsPath = "$propertiesPath\launchSettings.json"
+    $launchSettings = @{
+        profiles = [ordered]@{
+            "$projectName (Multi-Project)" = [ordered]@{
+                commandName = "Project"
+                launchBrowser = $true
+                applicationUrl = "https://localhost:7234;http://localhost:5234"
+                environmentVariables = [ordered]@{
+                    ASPNETCORE_ENVIRONMENT = "Development"
+                }
+            }
+        }
+    }
+    
+    $launchSettingsJson = $launchSettings | ConvertTo-Json -Depth 4
+    Set-Content -Path $launchSettingsPath -Value $launchSettingsJson -Encoding UTF8
+    
+    # Create .vscode configuration for VS Code users
+    $vscodePath = "$TargetPath\.vscode"
+    if (!(Test-Path $vscodePath)) {
+        New-Item -Path $vscodePath -ItemType Directory -Force | Out-Null
+    }
+    
+    # Create compound launch configuration
+    $vscodeConfig = [ordered]@{
+        version = "0.2.0"
+        configurations = @(
+            [ordered]@{
+                name = "$projectName.IdentityServer"
+                type = "coreclr"
+                request = "launch"
+                preLaunchTask = "build"
+                program = "`${workspaceFolder}/$projectName.IdentityServer/bin/Debug/net8.0/$projectName.IdentityServer.dll"
+                args = @()
+                cwd = "`${workspaceFolder}/$projectName.IdentityServer"
+                env = [ordered]@{
+                    ASPNETCORE_ENVIRONMENT = "Development"
+                    ASPNETCORE_URLS = "https://localhost:5001"
+                }
+                sourceFileMap = [ordered]@{
+                    "/Views" = "`${workspaceFolder}/Views"
+                }
+            }
+            [ordered]@{
+                name = "$projectName.OrderApi"
+                type = "coreclr"
+                request = "launch"
+                preLaunchTask = "build"
+                program = "`${workspaceFolder}/$projectName.OrderApi/bin/Debug/net8.0/$projectName.OrderApi.dll"
+                args = @()
+                cwd = "`${workspaceFolder}/$projectName.OrderApi"
+                env = [ordered]@{
+                    ASPNETCORE_ENVIRONMENT = "Development"
+                    ASPNETCORE_URLS = "https://localhost:7232"
+                }
+            }
+            [ordered]@{
+                name = "$projectName.MVC"
+                type = "coreclr"
+                request = "launch"
+                preLaunchTask = "build"
+                program = "`${workspaceFolder}/$projectName.MVC/bin/Debug/net8.0/$projectName.MVC.dll"
+                args = @()
+                cwd = "`${workspaceFolder}/$projectName.MVC"
+                env = [ordered]@{
+                    ASPNETCORE_ENVIRONMENT = "Development"
+                    ASPNETCORE_URLS = "https://localhost:7234"
+                }
+                serverReadyAction = [ordered]@{
+                    action = "openExternally"
+                    pattern = "\\bNow listening on:\\s+(https?://\\S+)"
+                }
+            }
+        )
+        compounds = @(
+            [ordered]@{
+                name = "Launch All $projectName Services"
+                configurations = @(
+                    "$projectName.IdentityServer"
+                    "$projectName.OrderApi"
+                    "$projectName.MVC"
+                )
+            }
+        )
+    }
+    
+    $vscodeConfigJson = $vscodeConfig | ConvertTo-Json -Depth 5
+    Set-Content -Path "$vscodePath\launch.json" -Value $vscodeConfigJson -Encoding UTF8
+    
+    # Create tasks.json for VS Code build task
+    $tasksConfig = [ordered]@{
+        version = "2.0.0"
+        tasks = @(
+            [ordered]@{
+                label = "build"
+                command = "dotnet"
+                type = "process"
+                args = @("build")
+                options = [ordered]@{
+                    cwd = "`${workspaceFolder}"
+                }
+                group = [ordered]@{
+                    kind = "build"
+                    isDefault = $true
+                }
+                presentation = [ordered]@{
+                    echo = $true
+                    reveal = "silent"
+                    focus = $false
+                    panel = "shared"
+                    showReuseMessage = $true
+                    clear = $false
+                }
+                problemMatcher = "`$msCompile"
+            }
+        )
+    }
+    
+    $tasksConfigJson = $tasksConfig | ConvertTo-Json -Depth 4
+    Set-Content -Path "$vscodePath\tasks.json" -Value $tasksConfigJson -Encoding UTF8
+    
     Write-Host ""
-    Write-Host "✅ Transformation completed successfully!" -ForegroundColor Green
+    Write-Host "🚀 Making project ready to run..." -ForegroundColor Green
+    
+    # Ask if user wants automatic setup
+    $autoSetup = Get-UserInput "Do you want to automatically create migration and build? (Y/n)" "Y"
+    
+    if ($autoSetup -match '^[Yy]|^$') {
+        Push-Location $TargetPath
+        
+        try {
+            # Step 10: Create migration
+            Write-Host "📦 Creating migration..." -ForegroundColor Cyan
+            $migrationResult = & dotnet ef migrations add Initial --project "$projectName.MVC" 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "   ✅ Migration created successfully" -ForegroundColor Green
+                
+                # Step 11: Update database
+                Write-Host "💾 Updating database..." -ForegroundColor Cyan
+                $dbResult = & dotnet ef database update --project "$projectName.MVC" 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "   ✅ Database updated successfully" -ForegroundColor Green
+                    
+                    # Step 12: Build project
+                    Write-Host "🔨 Building project..." -ForegroundColor Cyan
+                    $buildResult = & dotnet build 2>&1
+                    if ($LASTEXITCODE -eq 0) {
+                        Write-Host "   ✅ Project built successfully" -ForegroundColor Green
+                        Write-Host ""
+                        Write-Host "🎉 PROJECT IS READY TO RUN! 🎉" -ForegroundColor Green
+                        Write-Host ""
+                        Write-Host "🚀 To start your application:" -ForegroundColor Yellow
+                        Write-Host "   Visual Studio: Open solution and press F5 (multi-project startup configured)" -ForegroundColor Gray
+                        Write-Host "   VS Code: Open folder and run 'Launch All $projectName Services' compound" -ForegroundColor Gray
+                        Write-Host "   Command line: dotnet run --project $projectName.MVC" -ForegroundColor Gray
+                        Write-Host ""
+                        Write-Host "🌐 Then visit: https://localhost:7234" -ForegroundColor Cyan
+                        Write-Host "📧 Login with: admin@$($projectName.ToLower()).com / Admin123!" -ForegroundColor Cyan
+                    } else {
+                        Write-Host "   ❌ Build failed. Check the output above." -ForegroundColor Red
+                        Write-Host $buildResult
+                    }
+                } else {
+                    Write-Host "   ❌ Database update failed. Check the output above." -ForegroundColor Red
+                    Write-Host $dbResult
+                }
+            } else {
+                Write-Host "   ❌ Migration creation failed. Check the output above." -ForegroundColor Red
+                Write-Host $migrationResult
+            }
+        }
+        finally {
+            Pop-Location
+        }
+    } else {
+        Write-Host ""
+        Write-Host "✅ Transformation completed successfully!" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "🎯 Next Steps:" -ForegroundColor Yellow
+        Write-Host "   1. cd $TargetPath" -ForegroundColor Gray
+        Write-Host "   2. dotnet ef migrations add Initial --project $projectName.MVC" -ForegroundColor Gray
+        Write-Host "   3. dotnet ef database update --project $projectName.MVC" -ForegroundColor Gray
+        Write-Host "   4. dotnet build" -ForegroundColor Gray
+        Write-Host "   5. dotnet run --project $projectName.MVC" -ForegroundColor Gray
+    }
+    
     Write-Host ""
-    Write-Host "🎯 Next Steps:" -ForegroundColor Yellow
-    Write-Host "   1. cd $TargetPath" -ForegroundColor Gray
-    Write-Host "   2. dotnet ef migrations add Initial --project $projectName.MVC" -ForegroundColor Gray
-    Write-Host "   3. dotnet ef database update --project $projectName.MVC" -ForegroundColor Gray
-    Write-Host "   4. dotnet build" -ForegroundColor Gray
-    Write-Host "   5. dotnet run --project $projectName.MVC" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "📝 Don't forget to update the SeedData.cs with your scenario-specific data!" -ForegroundColor Cyan
+    Write-Host "📝 To customize for your specific scenario:" -ForegroundColor Cyan
+    Write-Host "   • Update SeedData.cs with domain-specific data" -ForegroundColor Gray
+    Write-Host "   • Modify entity properties to match business requirements" -ForegroundColor Gray
+    Write-Host "   • Add validation rules and business logic" -ForegroundColor Gray
     
 } catch {
     Write-Host ""
