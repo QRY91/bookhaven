@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">🔥 BookHaven Admin Dashboard</h2>
+            <div class="alert alert-info">
+                <strong>Blazor Admin Area</strong> - Modern interface for managing BookHaven content
+            </div>
+        </div>
+    </div>
+    
+    <!-- BLAZOR COMPONENT HOST -->
+    <component type="typeof(BookHaven.MVC.Blazor.Admin.BookManager)" render-mode="ServerPrerendered" />
+</div>
+
+@section Scripts {
+    <script src="_framework/blazor.server.js"></script>
+} 

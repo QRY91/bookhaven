@@ -1,0 +1,329 @@
+@page "/Admin/Books"
+@using Microsoft.EntityFrameworkCore
+@inherits OwningComponentBase
+@inject IJSRuntime JSRuntime
+@inject IToastService ToastService
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">📚 Manage Books</h4>
+                </div>
+                <div class="card-body">
+                    @if (books == null)
+                    {
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading books...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-content-between mb-3">
+                            <button class="btn btn-success" @onclick="ShowCreateForm">
+                                <i class="bi bi-plus-circle"></i> Add New Book
+                            </button>
+                            <span class="badge bg-info fs-6">Total: @books.Count() books</span>
+                        </div>
+
+                        <!-- BOOKS TABLE -->
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Author</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Stock</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var book in books)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@book.Title</strong><br />
+                                                <small class="text-muted">@book.ISBN</small>
+                                            </td>
+                                            <td>@(book.Author?.FullName ?? "Unknown")</td>
+                                            <td>@(book.Category?.Name ?? "None")</td>
+                                            <td>@book.Price.ToString("C")</td>
+                                            <td>
+                                                <span class="badge @GetStockBadgeClass(book.StockQuantity)">
+                                                    @book.StockQuantity
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-warning" @onclick="() => EditBook(book)">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteBook(book.Id)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CREATE/EDIT MODAL -->
+@if (showBookForm)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingBook?.Id > 0 ? "Edit Book" : "Create New Book")</h5>
+                    <button type="button" class="btn-close" @onclick="HideBookForm"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="editingBook" OnValidSubmit="SaveBook">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Title</label>
+                                    <InputText @bind-Value="editingBook.Title" class="form-control" />
+                                    <ValidationMessage For="() => editingBook.Title" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">ISBN</label>
+                                    <InputText @bind-Value="editingBook.ISBN" class="form-control" />
+                                    <ValidationMessage For="() => editingBook.ISBN" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">Description</label>
+                            <InputTextArea @bind-Value="editingBook.Description" class="form-control" rows="3" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Author</label>
+                                    <InputSelect @bind-Value="editingBook.AuthorId" class="form-select">
+                                        <option value="0">-- Select Author --</option>
+                                        @if (authors != null)
+                                        {
+                                            @foreach (var author in authors)
+                                            {
+                                                <option value="@author.Id">@author.FullName</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="() => editingBook.AuthorId" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Category</label>
+                                    <InputSelect @bind-Value="editingBook.CategoryId" class="form-select">
+                                        <option value="0">-- Select Category --</option>
+                                        @if (categories != null)
+                                        {
+                                            @foreach (var category in categories)
+                                            {
+                                                <option value="@category.Id">@category.Name</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="() => editingBook.CategoryId" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Price</label>
+                                    <InputNumber @bind-Value="editingBook.Price" class="form-control" step="0.01" />
+                                    <ValidationMessage For="() => editingBook.Price" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Stock Quantity</label>
+                                    <InputNumber @bind-Value="editingBook.StockQuantity" class="form-control" />
+                                    <ValidationMessage For="() => editingBook.StockQuantity" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Published Date</label>
+                                    <InputDate @bind-Value="editingBook.PublishedDate" class="form-control" />
+                                    <ValidationMessage For="() => editingBook.PublishedDate" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <InputCheckbox @bind-Value="editingBook.IsActive" class="form-check-input" />
+                            <label class="form-check-label">Is Active</label>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="HideBookForm">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                @(editingBook?.Id > 0 ? "Update Book" : "Create Book")
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private ApplicationDbContext context = default!;
+    private IEnumerable<Book>? books;
+    private IEnumerable<Author>? authors;
+    private IEnumerable<Category>? categories;
+    
+    private bool showBookForm = false;
+    private Book editingBook = new Book();
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = ScopedServices.GetRequiredService<ApplicationDbContext>();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        books = await context.Books
+            .Include(b => b.Author)
+            .Include(b => b.Category)
+            .OrderBy(b => b.Title)
+            .ToListAsync();
+            
+        authors = await context.Authors.OrderBy(a => a.LastName).ToListAsync();
+        categories = await context.Categories.OrderBy(c => c.Name).ToListAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        editingBook = new Book
+        {
+            PublishedDate = DateTime.Today,
+            IsActive = true
+        };
+        showBookForm = true;
+    }
+
+    private void EditBook(Book book)
+    {
+        editingBook = new Book
+        {
+            Id = book.Id,
+            Title = book.Title,
+            Description = book.Description,
+            ISBN = book.ISBN,
+            Price = book.Price,
+            StockQuantity = book.StockQuantity,
+            PublishedDate = book.PublishedDate,
+            IsActive = book.IsActive,
+            AuthorId = book.AuthorId,
+            CategoryId = book.CategoryId
+        };
+        showBookForm = true;
+    }
+
+    private void HideBookForm()
+    {
+        showBookForm = false;
+        editingBook = new Book();
+    }
+
+    private async Task SaveBook()
+    {
+        try
+        {
+            if (editingBook.Id == 0)
+            {
+                // Create new book
+                context.Books.Add(editingBook);
+                ToastService.ShowSuccess("Book created successfully!");
+            }
+            else
+            {
+                // Update existing book
+                var existingBook = await context.Books.FindAsync(editingBook.Id);
+                if (existingBook != null)
+                {
+                    existingBook.Title = editingBook.Title;
+                    existingBook.Description = editingBook.Description;
+                    existingBook.ISBN = editingBook.ISBN;
+                    existingBook.Price = editingBook.Price;
+                    existingBook.StockQuantity = editingBook.StockQuantity;
+                    existingBook.PublishedDate = editingBook.PublishedDate;
+                    existingBook.IsActive = editingBook.IsActive;
+                    existingBook.AuthorId = editingBook.AuthorId;
+                    existingBook.CategoryId = editingBook.CategoryId;
+                    
+                    context.Books.Update(existingBook);
+                    ToastService.ShowSuccess("Book updated successfully!");
+                }
+            }
+
+            await context.SaveChangesAsync();
+            await LoadData();
+            HideBookForm();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error saving book: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteBook(int bookId)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "Are you sure you want to delete this book?");
+            
+        if (confirmed)
+        {
+            try
+            {
+                var book = await context.Books.FindAsync(bookId);
+                if (book != null)
+                {
+                    context.Books.Remove(book);
+                    await context.SaveChangesAsync();
+                    await LoadData();
+                    ToastService.ShowSuccess("Book deleted successfully!");
+                }
+            }
+            catch (Exception ex)
+            {
+                ToastService.ShowError($"Error deleting book: {ex.Message}");
+            }
+        }
+    }
+
+    private string GetStockBadgeClass(int stock)
+    {
+        return stock > 10 ? "bg-success" : stock > 0 ? "bg-warning" : "bg-danger";
+    }
+} 

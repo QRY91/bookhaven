@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using BookHaven.MVC.Data;
 using BookHaven.Shared.Models;
+using Blazored.Toast;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +41,17 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
+// Add Blazor Server support (for Admin dashboard)
+builder.Services.AddServerSideBlazor();
+builder.Services.AddBlazoredToast();
+
+// Add HttpClient for API integration
+builder.Services.AddHttpClient<BookHaven.MVC.Services.IStockService, BookHaven.MVC.Services.StockService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7001/"); // OrderApi URL
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -65,6 +77,10 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
+
+// Add Blazor Hub and Admin fallback route
+app.MapBlazorHub();
+app.MapFallbackToController("/Admin/{*path:nonfile}", "Index", "Admin");
 
 // Seed the database
 using (var scope = app.Services.CreateScope())
