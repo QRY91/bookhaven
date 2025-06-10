@@ -74,6 +74,7 @@ The application comes with pre-seeded accounts:
 - **5 Books**: Harry Potter, The Shining, Good Omens, Foundation, Murder on Orient Express
 - **5 Authors**: J.K. Rowling, Stephen King, Neil Gaiman, Isaac Asimov, Agatha Christie
 - **5 Categories**: Fiction, Non-Fiction, Science, History, Biography
+- **Admin Account**: Automatically created for management access
 
 ## 🛠️ Development
 

@@ -41,20 +41,7 @@ public static class SeedData
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(adminUser, "Admin");
-                Console.WriteLine("Admin user created successfully!");
             }
-            else
-            {
-                Console.WriteLine("Failed to create admin user:");
-                foreach (var error in result.Errors)
-                {
-                    Console.WriteLine($"- {error.Description}");
-                }
-            }
-        }
-        else
-        {
-            Console.WriteLine("Admin user already exists.");
         }
 
         // Seed Categories
@@ -71,7 +58,6 @@ public static class SeedData
     {
         if (await context.Categories.AnyAsync()) 
         {
-            Console.WriteLine("Categories already exist.");
             return;
         }
 
@@ -116,14 +102,12 @@ public static class SeedData
 
         context.Categories.AddRange(categories);
         await context.SaveChangesAsync();
-        Console.WriteLine("Categories seeded successfully!");
     }
 
     private static async Task SeedAuthors(ApplicationDbContext context)
     {
         if (await context.Authors.AnyAsync()) 
         {
-            Console.WriteLine("Authors already exist.");
             return;
         }
 
@@ -178,14 +162,12 @@ public static class SeedData
 
         context.Authors.AddRange(authors);
         await context.SaveChangesAsync();
-        Console.WriteLine("Authors seeded successfully!");
     }
 
     private static async Task SeedBooks(ApplicationDbContext context)
     {
         if (await context.Books.AnyAsync()) 
         {
-            Console.WriteLine("Books already exist.");
             return;
         }
 
@@ -274,6 +256,5 @@ public static class SeedData
 
         context.Books.AddRange(books);
         await context.SaveChangesAsync();
-        Console.WriteLine("Books seeded successfully!");
     }
 } 
