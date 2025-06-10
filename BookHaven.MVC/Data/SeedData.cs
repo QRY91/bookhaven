@@ -28,7 +28,7 @@ public static class SeedData
         {
             adminUser = new ApplicationUser
             {
-                UserName = "admin",
+                UserName = adminEmail, // Use email as username
                 Email = adminEmail,
                 EmailConfirmed = true,
                 FirstName = "Admin",
@@ -39,7 +39,20 @@ public static class SeedData
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(adminUser, "Admin");
+                Console.WriteLine("Admin user created successfully!");
             }
+            else
+            {
+                Console.WriteLine("Failed to create admin user:");
+                foreach (var error in result.Errors)
+                {
+                    Console.WriteLine($"- {error.Description}");
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine("Admin user already exists.");
         }
     }
 } 
