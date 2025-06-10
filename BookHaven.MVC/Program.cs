@@ -14,6 +14,8 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Configure Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
+    // Sign-in settings
+    options.SignIn.RequireConfirmedAccount = false;
     // Password settings
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
