@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using BookHaven.MVC.Data;
 using BookHaven.Shared.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookHaven.MVC.Controllers
 {
@@ -101,6 +103,7 @@ namespace BookHaven.MVC.Controllers
 
         // POST: Books/Create
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Title,Description,ISBN,Price,StockQuantity,PublishedDate,IsActive,ImageUrl,AuthorId,CategoryId")] Book book)
         {

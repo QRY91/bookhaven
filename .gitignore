@@ -165,3 +165,6 @@ mono_crash.*
 # Local configuration files (may contain secrets)
 appsettings.Local.json
 appsettings.*.Local.json 
+
+# Custom
+/EXTRAS/.obsidian/
